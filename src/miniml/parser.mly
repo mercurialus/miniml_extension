@@ -10,6 +10,7 @@
 %token TRUE FALSE
 %token PLUS
 %token MINUS
+%token DIV (*New token for division*)
 %token TIMES
 %token EQUAL LESS
 %token IF THEN ELSE
@@ -30,7 +31,7 @@
 %nonassoc ELSE
 %nonassoc EQUAL LESS
 %left PLUS MINUS
-%left TIMES
+%left TIMES DIV
 %right TARROW
 
 %%
@@ -67,6 +68,8 @@ plain_expr:
     { Plus (e1, e2) }
   | e1 = expr MINUS e2 = expr
     { Minus (e1, e2) }
+  | e1 = expr DIV e2 = expr
+    { Div (e1,e2) }
   | e1 = expr TIMES e2 = expr
     { Times (e1, e2) }
   | e1 = expr EQUAL e2 = expr

@@ -16,6 +16,7 @@ and expr' =
   | Int of int           		(* Non-negative integer constant *)
   | Bool of bool         		(* Boolean constant *)
   | Times of expr * expr 		(* Product [e1 * e2] *)
+  | Div of expr * expr      (* Divsion [e1 / e2] *)
   | Plus of expr * expr  		(* Sum [e1 + e2] *)
   | Minus of expr * expr 		(* Difference [e1 - e2] *)
   | Equal of expr * expr 		(* Integer comparison [e1 = e2] *)
