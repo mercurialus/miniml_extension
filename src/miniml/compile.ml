@@ -9,6 +9,7 @@ let rec compile {Zoo.data=e'; _} =
     | Syntax.Int k -> [IInt k]
     | Syntax.Bool b -> [IBool b]
     | Syntax.Times (e1, e2) -> (compile e1) @ (compile e2) @ [IMult]
+    | Syntax.Div (e1,e2) -> (compile e1) @ (compile e2) @ [IDiv]
     | Syntax.Plus (e1, e2) -> (compile e1) @ (compile e2) @ [IAdd]
     | Syntax.Minus (e1, e2) -> (compile e1) @ (compile e2) @ [ISub]
     | Syntax.Equal (e1, e2) -> (compile e1) @ (compile e2) @ [IEqual]

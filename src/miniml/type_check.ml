@@ -28,6 +28,7 @@ and type_of ctx {Zoo.data=e; loc} =
     | Times (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Plus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Minus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
+    | Div (e1,e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
     | Equal (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TBool
     | Less (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TBool
     | If (e1, e2, e3) ->
