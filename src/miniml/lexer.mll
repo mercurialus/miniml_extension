@@ -33,6 +33,10 @@ rule token = parse
   | '-'             { MINUS }
   | '*'             { TIMES }
   | '/'             { DIV }
+  | "try"           { TRY }
+  | "with"          { WITH }
+  | "{"             { LBRACE }
+  | "}"             { RBRACE }
   | '"' (string_char | escape)* '"'    {  (* ← use your let-bound patterns *)
      let raw = Lexing.lexeme lexbuf in
      let len = String.length raw in
