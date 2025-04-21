@@ -5,8 +5,11 @@
 %token TINT
 %token TBOOL
 %token TARROW
+%token TSTRING
+
 %token <Syntax.name> VAR
 %token <int> INT
+%token <string> STRING (*Creating a new token for string*)
 %token TRUE FALSE
 %token PLUS
 %token MINUS
@@ -95,6 +98,8 @@ simple_expr: mark_position(plain_simple_expr) { $1 }
 plain_simple_expr:
   | x = VAR
     { Var x }
+  | s = STRING
+    {String s}  (*New Variable data type*)
   | TRUE    
     { Bool true }
   | FALSE
@@ -109,6 +114,8 @@ ty:
     { TBool }
   | TINT
     { TInt }
+  | TSTRING
+    { TString } (*String token*)
   | t1 = ty TARROW t2 = ty
     { TArrow (t1, t2) }
   | LPAREN t = ty RPAREN

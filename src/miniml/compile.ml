@@ -7,6 +7,7 @@ let rec compile {Zoo.data=e'; _} =
   match e' with
     | Syntax.Var x -> [IVar x]
     | Syntax.Int k -> [IInt k]
+    | Syntax.String s -> [IString s]
     | Syntax.Bool b -> [IBool b]
     | Syntax.Times (e1, e2) -> (compile e1) @ (compile e2) @ [IMult]
     | Syntax.Div (e1,e2) -> (compile e1) @ (compile e2) @ [IDiv]

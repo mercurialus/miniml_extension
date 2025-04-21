@@ -29,6 +29,7 @@ type name = Syntax.name
 type mvalue =
   | MInt of int                        (** Integer *)
   | MBool of bool                      (** Boolean value *)
+  | MString of string                  (** String Value **)
   | MClosure of name * frame * environ (** Closure *)
 
 (**
@@ -51,6 +52,7 @@ and instr =
   | ILess                           (** less than *)
   | IVar of name  		    (** push value of variable *)
   | IInt of int   		    (** push integer constant *)
+  | IString of string     (** push string constant**)
   | IBool of bool 		    (** push boolean constant *)
   | IClosure of name * name * frame (** push closure *)
   | IBranch of frame * frame        (** branch *)
@@ -81,6 +83,7 @@ let error msg = raise (Machine_error msg)
 let string_of_mvalue = function
   | MInt k -> string_of_int k
   | MBool b -> string_of_bool b
+  | MString (s:string) -> s 
   | MClosure _ -> "<fun>" (** Closures cannot be reasonably displayed *)
 
 (** [lookup x envs] scans through the list of environments [envs] and
@@ -121,10 +124,11 @@ let mult = function
   | (MInt x) :: (MInt y) :: s -> MInt (y * x) :: s
   | _ -> error "int and int expected in mult"
 
-(** Addition *)
+(** Addition for int and string*)
 let add = function
   | (MInt x) :: (MInt y) :: s -> MInt (y + x) :: s
-  | _ -> error "int and int expected in add"
+  | (MString x) :: (MString y) :: s -> MString(y^x)::s
+  | _ -> error "int and int or string and string expected in add"
 
 (** Subtraction *)
 let sub = function
@@ -134,6 +138,7 @@ let sub = function
 (** Equality *)
 let equal = function
   | (MInt x) :: (MInt y) :: s -> MBool (y = x) :: s
+  | (MString x) :: (MString y) :: s -> MBool (y = x) ::s
   | _ -> error "int and int expected in equal"
 
 (** Less than *)
@@ -158,6 +163,7 @@ let exec instr frms stck envs =
     (* Pushing values onto stack *)
     | IVar x  -> (frms, (lookup x envs) :: stck, envs)
     | IInt k  -> (frms, (MInt k) :: stck, envs)
+    | IString s -> (frms,(MString s):: stck, envs)
     | IBool b -> (frms, (MBool b) :: stck, envs)
     | IClosure (f, x, frm) ->
 	(match envs with
