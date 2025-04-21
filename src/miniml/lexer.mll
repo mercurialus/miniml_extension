@@ -37,10 +37,27 @@ rule token = parse
   | "with"          { WITH }
   | "{"             { LBRACE }
   | "}"             { RBRACE }
-  | '"' (string_char | escape)* '"'    {  (* ← use your let-bound patterns *)
-     let raw = Lexing.lexeme lexbuf in
-     let len = String.length raw in
-     let content = String.sub raw 1 (len - 2) in
+  | '"' (string_char | escape)* '"'    {  
+    let raw = Lexing.lexeme lexbuf in
+    let len = String.length raw in
+    let inner = String.sub raw 1 (len - 2) in
+    let unescape s =
+    let buf = Buffer.create (String.length s) in
+    let rec loop i =
+    if i = String.length s then Buffer.contents buf else
+    match s.[i] with
+    | '\\' when i + 1 < String.length s ->
+        begin match s.[i+1] with
+        | 'n'  -> Buffer.add_char buf '\n'; loop (i+2)
+        | 't'  -> Buffer.add_char buf '\t'; loop (i+2)
+        | 'r'  -> Buffer.add_char buf '\r'; loop (i+2)
+        | '\\' -> Buffer.add_char buf '\\'; loop (i+2)
+        | '"'  -> Buffer.add_char buf '"';  loop (i+2)
+        | c    -> Buffer.add_char buf '\\'; Buffer.add_char buf c; loop (i+2)
+        end
+    | c -> Buffer.add_char buf c; loop (i+1)
+  in loop 0 in 
+  let content = unescape inner in
      STRING content
    }
   | var             { VAR (Lexing.lexeme lexbuf) }
