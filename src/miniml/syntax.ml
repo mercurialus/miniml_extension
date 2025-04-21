@@ -7,6 +7,7 @@ type name = string
 type ty =
   | TInt              (* Integers *)
   | TBool             (* Booleans *)
+  | TString           (* String, new type*)
   | TArrow of ty * ty (* Functions *)
 
 (* Expressions *)
@@ -15,6 +16,7 @@ and expr' =
   | Var of name          		(* Variable *)
   | Int of int           		(* Non-negative integer constant *)
   | Bool of bool         		(* Boolean constant *)
+  | String of string        (*String literal*)
   | Times of expr * expr 		(* Product [e1 * e2] *)
   | Div of expr * expr      (* Divsion [e1 / e2] *)
   | Plus of expr * expr  		(* Sum [e1 + e2] *)
@@ -24,6 +26,7 @@ and expr' =
   | If of expr * expr * expr 		(* Conditional [if e1 then e2 else e3] *)
   | Fun of name * name * ty * ty * expr (* Function [fun f(x:s):t is e] *)
   | Apply of expr * expr 		(* Application [e1 e2] *)
+  
 
 (* Toplevel commands *)
 type command =

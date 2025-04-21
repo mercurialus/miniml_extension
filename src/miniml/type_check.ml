@@ -21,15 +21,37 @@ let rec check ctx ty ({Zoo.loc;_} as e) =
 and type_of ctx {Zoo.data=e; loc} =
   match e with
     | Var x ->
-      (try List.assoc x ctx with
-	  Not_found -> typing_error ~loc "unknown variable %s" x)
-    | Int _ -> TInt
+        (try List.assoc x ctx with
+         | Not_found -> typing_error ~loc "unknown variable %s" x)
+
+    | Int _  -> TInt
     | Bool _ -> TBool
+    | String _ -> TString                      (*NEW *)
     | Times (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
-    | Plus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
+    
+    | Plus (e1, e2) ->
+        begin match (type_of ctx e1, type_of ctx e2) with
+        | TInt   , TInt    -> TInt
+        | TString, TString -> TString
+        | ty1   , ty2 ->
+            typing_error ~loc
+              "both sides of + must be int or both string (got %t and %t)"
+              (Print.ty ty1) (Print.ty ty2)
+        end
+
     | Minus (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
-    | Div (e1,e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
-    | Equal (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TBool
+    | Div   (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TInt
+
+    | Equal (e1, e2) ->
+        begin match (type_of ctx e1, type_of ctx e2) with
+        | TInt   , TInt
+        | TString, TString -> TBool
+        | ty1   , ty2 ->
+            typing_error ~loc
+              "cannot compare values of types %t and %t"
+              (Print.ty ty1) (Print.ty ty2)
+        end
+
     | Less (e1, e2) -> check ctx TInt e1 ; check ctx TInt e2 ; TBool
     | If (e1, e2, e3) ->
       check ctx TBool e1 ;
