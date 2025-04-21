@@ -9,7 +9,7 @@ open Syntax
 
 (** [is_value e] returns true, if program [e] is a value. *)
 let is_value = function
-  | Int _ | Bool _ | Fun _ -> true
+  | Int _ | Bool _ | String _| Fun _ -> true
   | Var _ | Times _ | Plus _ | Minus _
   | Equal _ | Less _ | If _ | Apply _ -> false
 
