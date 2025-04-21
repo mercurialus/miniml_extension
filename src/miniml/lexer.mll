@@ -29,6 +29,10 @@ rule token = parse
   | '-'             { MINUS }
   | '*'             { TIMES }
   | '/'             { DIV }
+  | "try"           { TRY }
+  | "with"          { WITH }
+  | "{"             { LBRACE }
+  | "}"             { RBRACE }
   | var             { VAR (Lexing.lexeme lexbuf) }
   | eof             { EOF }
 

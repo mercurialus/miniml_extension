@@ -35,6 +35,19 @@ and type_of ctx {Zoo.data=e; loc} =
       check ctx TBool e1 ;
       let ty = type_of ctx e2 in
 	check ctx ty e3 ; ty
+    | Raise e ->
+      check ctx TInt e ;
+      TInt
+    (* The type of the exception is the same as the type of the raised
+       expression. *)
+    | TryWith (e1, e2) ->(
+      let ty1 = type_of ctx e1 in
+      let ty2 = type_of ctx e2 in
+      if ty1 = ty2 then 
+        ty1
+      else 
+        typing_error ~loc
+          "this expression is used as an exception but its type is %t" (Print.ty ty1))
     | Fun (f, x, ty1, ty2, e) ->
       check ((f, TArrow(ty1,ty2)) :: (x, ty1) :: ctx) ty2 e ;
       TArrow (ty1, ty2)

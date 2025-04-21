@@ -56,6 +56,10 @@ and instr =
   | IBranch of frame * frame        (** branch *)
   | ICall                           (** execute a closure *)
   | IPopEnv                         (** pop environment *)
+  | IRaise                          (** raise an exception *)
+  | IHandle of frame                (** handle an exception *)
+
+
 
 (** A frame is a list (stack) of instructions *)
 and frame = instr list
@@ -68,6 +72,7 @@ and stack = mvalue list
 
 (** Exception indicating a runtime error *)
 exception Machine_error of string
+exception Machine_exception of mvalue
 
 (** Report a runtime error *)
 let error msg = raise (Machine_error msg)
@@ -104,7 +109,11 @@ let pop_app = function
 
 (** Divisionn **)
 let division = function 
-  | (MInt x) :: (MInt y) :: s -> MInt (y / x) :: s
+  | (MInt x) :: (MInt y) :: s ->
+    if x = 0 then
+      raise (Machine_exception (MInt 0))
+    else 
+      MInt (y / x) :: s
   | _ -> error "int and int expected in div"
 
 (** Multiplication *)
@@ -131,6 +140,7 @@ let equal = function
 let less = function
   | (MInt x) :: (MInt y) :: s -> MBool (y < x) :: s
   | _ -> error "int and int expected in less"
+
 
 (** [exec instr frms stck envs] executes instruction [instr] in the
     given state [(frms, stck, envs)], where [frms] is a stack of frames,
@@ -166,13 +176,50 @@ let exec instr frms stck envs =
 	(match envs with
 	     [] -> error "no environment to pop"
 	   | _ :: envs' -> (frms, stck, envs'))
+     | IRaise ->
+           let (v, _) = pop stck in
+           raise (Machine_exception v)
+        | IHandle _ ->
+           (* handler frames are managed in [run], not here *)
+           failwith "IHandle should be handled by run"
 
 (** [run frm env] executes the frame [frm] in environment [env]. *)
 let run frm env =
   let rec loop = function
-    | ([], [v], _) -> v
+    (* | ([], [v], _) -> v
     | ((i::is) :: frms, stck, envs) -> loop (exec i (is::frms) stck envs)
     | ([] :: frms, stck, envs) -> loop (frms, stck, envs)
-    | _ -> error "illegal end of program"
+    | _ -> error "illegal end of program" *)
+    | ([], [v], _) -> v
+
+    (* install a handler and catch only division_by_zero sentinel MInt 0 *)
+    | (((IHandle handler)::is)::frms, stck, envs) ->
+        (try
+           let result = loop (is :: frms, stck, envs) in
+           (* remove handler frame *)
+           loop (frms, result :: stck, envs)
+         with
+         | Machine_exception (MInt 0) -> 
+           (* catch division_by_zero: run handler with 0 on stack *)
+           Printf.printf "catching division_by_zero\n";
+           loop ([handler], stck, envs)
+         | exn ->
+           (* re-raise other exceptions *)
+           raise exn)
+
+    (* normal instruction execution *)
+    | ((i::is) :: frms, stck, envs) ->
+        loop (exec i (is :: frms) stck envs)
+
+    (* skip empty frames *)
+    | ([] :: frms, stck, envs) ->
+        loop (frms, stck, envs)
+
+    | _ ->
+        error "illegal end of program"
   in
+  try 
     loop ([frm], [], [env])
+  with
+  |Machine_error msg -> 
+      error ("machine error: " ^ msg) 
