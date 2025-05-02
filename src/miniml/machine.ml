@@ -229,7 +229,7 @@ let run frm env =
                       loop ([handler], stck, envs)
                   | exn ->
                       (* re‑raise DivisionByZero or anything else *)
-                      raise exn)
+                      loop ([handler], stck, envs))
 
     (* normal instruction execution *)
     | ((i::is) :: frms, stck, envs) ->
