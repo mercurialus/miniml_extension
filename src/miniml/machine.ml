@@ -60,6 +60,8 @@ and instr =
   | IPopEnv                         (** pop environment *)
   | IRaise                          (** raise an exception *)
   | IHandle of frame                (** handle an exception *)
+  | IHandleDivZero of frame
+  | IHandleGeneric of frame
 
 
 
@@ -105,7 +107,7 @@ let pop_bool = function
 (** Pop a value and a closure from a stack. *)
 let pop_app = function
   | v :: MClosure (x, f, e) :: s -> (x, f, e, v, s)
-  | _ -> error "value and closure expected"
+  | _ -> raise (Machine_exception (MInt 1))
 
 (** Arithmetical operations take their arguments from a stack and put the
     result onto the stack. We use auxiliary functions that do this. *)
@@ -117,34 +119,34 @@ let division = function
       raise (Machine_exception (MInt 0))
     else 
       MInt (y / x) :: s
-  | _ -> error "int and int expected in div"
+      | _ -> raise (Machine_exception (MInt 1))
 
 (** Multiplication *)
 let mult = function
   | (MInt x) :: (MInt y) :: s -> MInt (y * x) :: s
-  | _ -> error "int and int expected in mult"
+  | _ -> raise (Machine_exception (MInt 1))
 
 (** Addition for int and string*)
 let add = function
   | (MInt x) :: (MInt y) :: s -> MInt (y + x) :: s
   | (MString x) :: (MString y) :: s -> MString(y^x)::s
-  | _ -> error "int and int or string and string expected in add"
+  | _ -> raise (Machine_exception (MInt 1))
 
 (** Subtraction *)
 let sub = function
   | (MInt x) :: (MInt y) :: s -> MInt (y - x) :: s
-  | _ -> error "int and int expected in sub"
+  | _ -> raise (Machine_exception (MInt 1))
 
 (** Equality *)
 let equal = function
   | (MInt x) :: (MInt y) :: s -> MBool (y = x) :: s
   | (MString x) :: (MString y) :: s -> MBool (y = x) ::s
-  | _ -> error "int and int expected in equal"
+  | _ -> raise (Machine_exception (MInt 1))
 
 (** Less than *)
 let less = function
   | (MInt x) :: (MInt y) :: s -> MBool (y < x) :: s
-  | _ -> error "int and int expected in less"
+  | _ -> raise (Machine_exception (MInt 1))
 
 
 (** [exec instr frms stck envs] executes instruction [instr] in the
@@ -188,6 +190,11 @@ let exec instr frms stck envs =
         | IHandle _ ->
            (* handler frames are managed in [run], not here *)
            failwith "IHandle should be handled by run"
+        | IHandleDivZero _
+        | IHandleGeneric _ ->
+            (* likewise – never executed directly *)
+            failwith "IHandle should be handled by run"
+
 
 (** [run frm env] executes the frame [frm] in environment [env]. *)
 let run frm env =
@@ -199,7 +206,7 @@ let run frm env =
     | ([], [v], _) -> v
 
     (* install a handler and catch only division_by_zero sentinel MInt 0 *)
-    | (((IHandle handler)::is)::frms, stck, envs) ->
+    | (((IHandleDivZero handler)::is)::frms, stck, envs) ->
         (try
            let result = loop (is :: frms, stck, envs) in
            (* remove handler frame *)
@@ -212,6 +219,17 @@ let run frm env =
          | exn ->
            (* re-raise other exceptions *)
            raise exn)
+            | (((IHandleGeneric handler)::is)::frms, stck, envs) ->
+                 (try
+                    let result = loop (is :: frms, stck, envs) in
+                    loop (frms, result :: stck, envs)
+                  with
+                  | Machine_exception (MInt 1) ->
+                      (* catch GenericException: run handler *)
+                      loop ([handler], stck, envs)
+                  | exn ->
+                      (* re‑raise DivisionByZero or anything else *)
+                      raise exn)
 
     (* normal instruction execution *)
     | ((i::is) :: frms, stck, envs) ->

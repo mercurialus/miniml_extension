@@ -19,11 +19,17 @@ exception Value
 (** An exception indicating a runtime error. *)
 exception Runtime
 
+(**Generic and DivZero**)
+exception EDivZero
+exception EGeneric
+
 (** [eval1 e] performs a single evaluation step. It raises exception
     Value if [e] is a value. *)
 let rec eval1 = function
   | Var _ -> raise Runtime
   | Int _ | Bool _ | Fun _ -> raise Value
+  | Raise DivZero -> raise EDivZero
+  | Raise Generic -> raise EGeneric
   | Times (Int k1, Int k2) -> Int (k1 * k2)
   | Times (Int k1, e2)     -> Times (Int k1, eval1 e2)
   | Times (e1, e2)         -> Times (eval1 e1, e2)
@@ -46,6 +52,18 @@ let rec eval1 = function
       subst [(f, v1); (x, v2)] e
   | Apply (Fun _ as v1, e2) -> Apply (v1, eval1 e2)
   | Apply (e1, e2) -> Apply (eval1 e1, e2)
+  | Div (v1, v2) when is_int v1 && is_int v2 && int_of v2 = 0 ->
+    raise EDivZero                        (* automatic DBZ detection *)
+
+    | TryWith (body, kind, handler) ->
+           begin
+             try
+               eval1 body      (* big-step the entire body *)
+             with
+             | EDivZero when kind = DivZero -> handler
+             | EGeneric when kind = Generic  -> handler
+             | exn -> raise exn             (* propagate anything else *)
+           end
 
 (** [eval e] evaluates program [e]. The evaluation returns a value,
     diverges, or raises the [Runtime] exception. *)
