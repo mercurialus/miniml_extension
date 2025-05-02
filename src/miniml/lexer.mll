@@ -35,6 +35,9 @@ rule token = parse
   | '/'             { DIV }
   | "try"           { TRY }
   | "with"          { WITH }
+  | "raise"         { RAISE }
+  | "DivisionByZero" { DIVZERO }
+  | "GenericException" { GENERIC }
   | "{"             { LBRACE }
   | "}"             { RBRACE }
   | '"' (string_char | escape)* '"'    {  

@@ -10,6 +10,10 @@ type ty =
   | TString           (* String, new type*)
   | TArrow of ty * ty (* Functions *)
 
+type exn_type=
+  | DivZero
+  | Generic
+
 (* Expressions *)
 type expr = expr' Zoo.located
 and expr' =
@@ -26,8 +30,10 @@ and expr' =
   | If of expr * expr * expr 		(* Conditional [if e1 then e2 else e3] *)
   | Fun of name * name * ty * ty * expr (* Function [fun f(x:s):t is e] *)
   | Apply of expr * expr 		(* Application [e1 e2] *)
-  | TryWith of expr * expr  (* Exception handling [try e1 with x is e2] *)
-  | Raise of expr (* Raise an exception [raise e] *)
+  | TryWith of expr * exn_type * expr  (* Exception handling [try e1 with x is e2] *)
+  | Raise of exn_type (* Raise an exception [raise e] *)
+
+
 
 (* Toplevel commands *)
 type command =

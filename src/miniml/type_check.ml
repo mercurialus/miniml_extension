@@ -56,27 +56,39 @@ and type_of ctx {Zoo.data=e; loc} =
     | If (e1, e2, e3) ->
       check ctx TBool e1 ;
       let ty = type_of ctx e2 in
-	check ctx ty e3 ; ty
-    | Raise e ->
-      check ctx TInt e ;
+        check ctx ty e3 ; ty
+
+    | Raise _ ->
+      (* raising one of our two exceptions never produces a value;
+         we assign it a placeholder type, here TInt *)
       TInt
-    (* The type of the exception is the same as the type of the raised
-       expression. *)
-    | TryWith (e1, e2) ->(
-      let ty1 = type_of ctx e1 in
-      let ty2 = type_of ctx e2 in
-      if ty1 = ty2 then 
-        ty1
-      else 
-        typing_error ~loc
-          "this expression is used as an exception but its type is %t" (Print.ty ty1))
+
+    (* TryWith: only two discrete cases, both must return the same type *)
+    | TryWith (e1, kind, handler) ->
+      let ty_h = type_of ctx handler in
+      begin match kind with
+      | Generic ->
+          (* GenericException handler wins, skip checking e1 *)
+          ty_h
+      | DivZero ->
+          let ty_b = type_of ctx e1 in
+          if ty_b = ty_h then
+            ty_b
+          else
+            typing_error ~loc
+              "try and handler must have same type (got %t vs %t)"
+              (Print.ty ty_b) (Print.ty ty_h)
+      end
+
     | Fun (f, x, ty1, ty2, e) ->
       check ((f, TArrow(ty1,ty2)) :: (x, ty1) :: ctx) ty2 e ;
       TArrow (ty1, ty2)
+
     | Apply (e1, e2) ->
       begin match type_of ctx e1 with
-	  TArrow (ty1, ty2) -> check ctx ty1 e2 ; ty2
-	| ty ->
-	  typing_error ~loc
-            "this expression is used as a function but its type is %t" (Print.ty ty)
+        | TArrow (ty1, ty2) -> check ctx ty1 e2 ; ty2
+        | ty ->
+          typing_error ~loc
+            "this expression is used as a function but its type is %t"
+            (Print.ty ty)
       end
